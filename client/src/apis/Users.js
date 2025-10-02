@@ -24,8 +24,10 @@ export const addUser = async ({firstName, lastName, email, phone, address, payme
     return response.json();
 }
 
-export const listAllUsers = async () =>{
-    const response = await fetch(`${baseUrl}/users`);
+export const listAllUsers = async ({ page = 1, limit = 25, sortBy = 'id', direction = 'asc', q = '' } = {}) =>{
+    const params = new URLSearchParams({ page, limit, sortBy, direction });
+    if(q) params.append('q', q);
+    const response = await fetch(`${baseUrl}/users?${params.toString()}`);
     if (!response.ok) {
         throw new Error('Failed to fetch users');
     }

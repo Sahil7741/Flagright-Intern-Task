@@ -1,3 +1,31 @@
 body{
-    background: #000;
+    margin: 0;
+    padding: 0;
+    background: radial-gradient(1000px 600px at 10% 10%, #0b1220 0%, #070b13 40%, #05070d 100%);
+    color: #e5e7eb;
+}
+
+.glass {
+    background: rgba(17, 24, 39, 0.6);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.04);
+    backdrop-filter: blur(8px);
+    border-radius: 16px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #6366f1, #22d3ee);
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    filter: brightness(1.05);
+}
+
+.heading-neon {
+    background: linear-gradient(90deg, #22d3ee, #a78bfa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }

@@ -13,8 +13,12 @@ const Transactions = () => {
   const [ip, setIp] = useState('');
   const [deviceId, setDeviceId] = useState('');
   const [transactions, setTransactions] = useState([]);
-  const [tempTransactions, setTempTransactions] = useState([]);
   const [searchWords, setSearchWords] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
+  const [total, setTotal] = useState(0);
+  const [sortBy, setSortBy] = useState('id');
+  const [direction, setDirection] = useState('asc');
   const [filterProperties, setFilterProperties] = useState({
     sender_name: true,
     sender_email: false,
@@ -52,13 +56,14 @@ const Transactions = () => {
     }
   };
 
-  const listTransactions = async () => {
+  const listTransactions = async (opts={}) => {
     try {
-      const data = await listAllTransactions();
-      console.log(data);
-      setTransactions(data);
-      setTempTransactions(data);
-      toast.success('Transactions fetched successfully!');
+      const params = { page, limit, sortBy, direction, ...opts };
+      const res = await listAllTransactions(params);
+      setTransactions(res.data);
+      setTotal(res.total);
+      setPage(res.page);
+      setLimit(res.limit);
     } catch (error) {
       toast.error('Failed to fetch transactions');
       console.error('Error fetching transactions:', error);
@@ -66,44 +71,22 @@ const Transactions = () => {
   };
 
   const handleSearch = () => {
-    const target = searchWords.trim().toLowerCase();
-    const activeProps = Object.keys(filterProperties).filter(key => filterProperties[key]);
-    const filtered = tempTransactions.filter(txn => {
-      return activeProps.some(prop => {
-        switch (prop) {
-          case 'sender_name':
-            return txn.sender?.name && txn.sender.name.toLowerCase().includes(target);
-          case 'sender_email':
-            return txn.sender?.email && txn.sender.email.toLowerCase().includes(target);
-          case 'sender_phone':
-            return txn.sender?.phone && txn.sender.phone.toLowerCase().includes(target);
-          case 'sender_address':
-            return txn.sender?.address && txn.sender.address.toLowerCase().includes(target);
-          case 'receiver_name':
-            return txn.receiver?.name && txn.receiver.name.toLowerCase().includes(target);
-          case 'receiver_email':
-            return txn.receiver?.email && txn.receiver.email.toLowerCase().includes(target);
-          case 'receiver_phone':
-            return txn.receiver?.phone && txn.receiver.phone.toLowerCase().includes(target);
-          case 'receiver_address':
-            return txn.receiver?.address && txn.receiver.address.toLowerCase().includes(target);
-          case 'ip':
-            return txn.transaction?.ip && txn.transaction.ip.toLowerCase().includes(target);
-          case 'deviceId':
-            return txn.transaction?.deviceId && txn.transaction.deviceId.toLowerCase().includes(target);
-          case 'amount':
-            return txn.transaction?.amount && txn.transaction.amount.toString().toLowerCase().includes(target);
-          default:
-            return false;
-        }
-      });
-    });
-    setTransactions(filtered);
+    const active = Object.keys(filterProperties).filter(k=>filterProperties[k]);
+    const opts = {};
+    if (active.includes('ip')) opts.ip = searchWords;
+    if (active.includes('deviceId')) opts.deviceId = searchWords;
+    if (active.includes('amount')) {
+      const v = Number(searchWords);
+      if(!Number.isNaN(v)) opts.minAmount = v;
+    }
+    setPage(1);
+    listTransactions({ page: 1, ...opts });
   };
 
   const handleReset = () => {
-    setTransactions(tempTransactions);
     setSearchWords('');
+    setPage(1);
+    listTransactions({ page: 1, ip: undefined, deviceId: undefined, minAmount: undefined, maxAmount: undefined });
   };
 
   useEffect(() => {
@@ -118,7 +101,7 @@ const Transactions = () => {
       }
     };
     fetchUsers();
-  }, []);
+  }, [page, limit, sortBy, direction]);
 
   return (
     <>
@@ -129,7 +112,7 @@ const Transactions = () => {
       <div className='p-4'>
         <Buttons text={'Add Transaction'} onClick={handleAddTransaction} />
       </div>
-      <div className='flex flex-col p-4 gap-4 sticky top-0 z-10 bg-black'>
+      <div className='flex flex-col p-4 gap-4 sticky top-0 z-10 bg-gray-950'>
         <div className='flex flex-wrap gap-4 items-center'>
           <div className="flex flex-wrap gap-3 items-center">
             {Object.entries(filterProperties).map(([key, checked]) => (
@@ -150,15 +133,37 @@ const Transactions = () => {
             id='search'
             placeholder='Search transactions...'
             value={searchWords}
-            className='md:w-1/2 w-full box-border text-white p-2 border border-gray-300 rounded focus:outline-0 bg-black'
+            className='md:w-1/2 w-full box-border text-white p-2 border border-gray-300 rounded focus:outline-0 bg-gray-900'
             onChange={e => {
                 setSearchWords(e.target.value);
-                handleSearch();
             }}
+            onKeyDown={(e)=>{ if(e.key==='Enter') handleSearch(); }}
           />
-          <Buttons text={'Reset'} onClick={handleReset} disabled={tempTransactions==transactions}/>
+          <Buttons text={'Search'} onClick={handleSearch} />
+          <Buttons text={'Reset'} onClick={handleReset} />
         </div>
-        <h2 className='text-lg font-semibold text-white'>Transactions List</h2>
+        <div className='flex items-center gap-3 text-white'>
+          <span>Total: {total}</span>
+          <label>Sort by
+            <select className='ml-2 bg-gray-900 border border-gray-700' value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
+              <option value='id'>ID</option>
+              <option value='amount'>Amount</option>
+            </select>
+          </label>
+          <label>Dir
+            <select className='ml-2 bg-gray-900 border border-gray-700' value={direction} onChange={(e)=>setDirection(e.target.value)}>
+              <option value='asc'>asc</option>
+              <option value='desc'>desc</option>
+            </select>
+          </label>
+          <label>Page
+            <input className='ml-2 w-16 bg-gray-900 border border-gray-700' type='number' min='1' value={page} onChange={(e)=>setPage(Number(e.target.value)||1)} />
+          </label>
+          <label>Limit
+            <input className='ml-2 w-16 bg-gray-900 border border-gray-700' type='number' min='1' max='200' value={limit} onChange={(e)=>setLimit(Number(e.target.value)||25)} />
+          </label>
+        </div>
+        <h2 className='text-lg font-semibold text-white'>Transactions</h2>
       </div>
       {showModal && (
         <div className='fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50'>

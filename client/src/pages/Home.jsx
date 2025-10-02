@@ -7,14 +7,14 @@ import BACKED_BY from '../constants/backedby';
 const Home = () => {
   return (
     <>
-    <div className='bg-black text-white max-h-2/3 h-1/2 my-40'>
-        <div className='flex flex-col items-center justify-center max-w-2/3 mx-auto'>
-            <h1 className='text-6xl font-bold text-center mb-4 font-roboto'>User and Transaction Relationship Visualization</h1>
-            <p className='text-center text-2xl'>A modern system by Flagright to visualize relationships between user accounts using transaction data and shared attributes in a graph database environment to detect Fraud and Anti-Money Laundering activities.</p>
+    <div className='text-white my-16'>
+        <div className='glass flex flex-col items-center justify-center max-w-3xl mx-auto p-8'>
+            <h1 className='heading-neon text-5xl font-extrabold text-center mb-3'>Graph Explorer</h1>
+            <p className='text-center text-lg text-gray-300'>Visualize relationships between users and transactions using a graph database. Explore at 100k+ scale with fast filters.</p>
         </div>
     </div>
     <div className='flex flex-col justify-center items-center mx-auto max-w-full'>
-        <h1 className='text-white text-3xl my-4 font-bold'>Why Flagright FRAML?</h1>
+        <h1 className='text-white text-3xl my-4 font-bold'>Why this system?</h1>
         <div className="flex my-10 justify-evenly max-w-full flex-wrap gap-4">
           <MediaCard 
             title="User Behavior Analysis"

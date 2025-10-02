@@ -13,8 +13,12 @@ const Users = () => {
     const [address, setAddress] = useState('');
     const [paymentMethods, setPaymentMethods] = useState('');
     const [users, setUsers] = useState([]);
-    const [tempUsers, setTempUsers] = useState([]);
     const [searchWords, setSearchWords] = useState('');
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(25);
+    const [total, setTotal] = useState(0);
+    const [sortBy, setSortBy] = useState('id');
+    const [direction, setDirection] = useState('asc');
     const [filterProperties, setFilterProperties] = useState({
         name: true,
         email: false,
@@ -60,13 +64,14 @@ const Users = () => {
         }
     }
 
-    const listUsers = async () => {
+    const listUsers = async (opts={}) => {
         try {
-            const data = await listAllUsers();
-            console.log("Fetched users:", data);
-            toast.success("Users fetched successfully!");
-            setUsers(data);
-            setTempUsers(data);
+            const params = { page, limit, sortBy, direction, q: searchWords, ...opts };
+            const res = await listAllUsers(params);
+            setUsers(res.data);
+            setTotal(res.total);
+            setPage(res.page);
+            setLimit(res.limit);
         }
         catch (error) {
             toast.error("Failed to fetch users");
@@ -75,24 +80,18 @@ const Users = () => {
     }
 
     const handleSearch = () => {
-        const target = (searchWords.trim()).toLowerCase();
-        const activeProps = Object.keys(filterProperties).filter(key => filterProperties[key]);
-        const filteredUsers = tempUsers.filter(user => {
-            return activeProps.some(prop => {
-                if (!user[prop]) return false;
-                return user[prop].toLowerCase().includes(target);
-            });
-        });
-        setUsers(filteredUsers);
+        setPage(1);
+        listUsers({ page: 1 });
     }
 
     useEffect(() => {
         listUsers();
-    }, []);
+    }, [page, limit, sortBy, direction]);
 
     const handleReset = () => {
-        setUsers(tempUsers);
         setSearchWords("");
+        setPage(1);
+        listUsers({ page: 1, q: '' });
     };
 
     return (
@@ -104,7 +103,7 @@ const Users = () => {
             <div className='p-4'>
                 <Buttons text={"Add User"} onClick={handleAddUser} />
             </div>
-            <div className='flex flex-col p-4 gap-4 sticky top-0 z-10 bg-black'>
+            <div className='flex flex-col p-4 gap-4 sticky top-0 z-10 bg-gray-950'>
                 <div className='flex flex-wrap gap-4 items-center'>
                     <div className="flex gap-3 items-center">
                         {Object.entries(filterProperties).map(([key, checked]) => (
@@ -119,13 +118,34 @@ const Users = () => {
                             </label>
                         ))}
                     </div>
-                    <input type="search" name="search" id="search" placeholder="Search users..." value={searchWords} className='md:w-1/2 w-full box-border text-white p-2 border border-gray-300 rounded focus:outline-0 bg-black' onChange={(e) => {
+                    <input type="search" name="search" id="search" placeholder="Search users..." value={searchWords} className='md:w-1/2 w-full box-border text-white p-2 border border-gray-300 rounded focus:outline-0 bg-gray-900' onChange={(e) => {
                         setSearchWords(e.target.value)
-                        handleSearch();
-                    }} />
-                    <Buttons text={"Reset"} onClick={handleReset} disabled={users == tempUsers} />
+                    }} onKeyDown={(e)=>{ if(e.key==='Enter') handleSearch(); }} />
+                    <Buttons text={"Search"} onClick={handleSearch} />
+                    <Buttons text={"Reset"} onClick={handleReset} />
                 </div>
-                <h2 className='text-lg font-semibold text-white'>Users List</h2>
+                <div className='flex items-center gap-3 text-white'>
+                    <span>Total: {total}</span>
+                    <label>Sort by
+                        <select className='ml-2 bg-gray-900 border border-gray-700' value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
+                            <option value="id">ID</option>
+                            <option value="name">Name</option>
+                        </select>
+                    </label>
+                    <label>Dir
+                        <select className='ml-2 bg-gray-900 border border-gray-700' value={direction} onChange={(e)=>setDirection(e.target.value)}>
+                            <option value="asc">asc</option>
+                            <option value="desc">desc</option>
+                        </select>
+                    </label>
+                    <label>Page
+                        <input className='ml-2 w-16 bg-gray-900 border border-gray-700' type='number' min='1' value={page} onChange={(e)=>setPage(Number(e.target.value)||1)} />
+                    </label>
+                    <label>Limit
+                        <input className='ml-2 w-16 bg-gray-900 border border-gray-700' type='number' min='1' max='200' value={limit} onChange={(e)=>setLimit(Number(e.target.value)||25)} />
+                    </label>
+                </div>
+                <h2 className='text-lg font-semibold text-white'>Users</h2>
             </div>
             {showModal && (
                 <div className='fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50'>

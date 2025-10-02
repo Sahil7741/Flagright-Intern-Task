@@ -1,7 +1,14 @@
 const baseUrl = import.meta.env.VITE_API_URL;
 
-export const listAllTransactions = async() =>{
-    const response = await fetch(`${baseUrl}/transactions`);
+export const listAllTransactions = async({ page = 1, limit = 25, sortBy = 'id', direction = 'asc', ip, deviceId, senderId, receiverId, minAmount, maxAmount } = {}) =>{
+    const params = new URLSearchParams({ page, limit, sortBy, direction });
+    if (ip) params.append('ip', ip);
+    if (deviceId) params.append('deviceId', deviceId);
+    if (senderId) params.append('senderId', senderId);
+    if (receiverId) params.append('receiverId', receiverId);
+    if (minAmount != null) params.append('minAmount', String(minAmount));
+    if (maxAmount != null) params.append('maxAmount', String(maxAmount));
+    const response = await fetch(`${baseUrl}/transactions?${params.toString()}`);
     if(!response.ok)
         throw new Error("Failed to fetch transactions");
     return response.json();
