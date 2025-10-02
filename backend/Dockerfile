@@ -3,11 +3,11 @@ FROM node:20
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-RUN npm install
+RUN npm install --production
 
 COPY . .
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "node seed.js && npm run dev"]
+CMD ["sh", "-c", "node seed.js && node index.js"]
 

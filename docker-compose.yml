@@ -34,6 +34,7 @@ services:
       - NEO4J_PASSWORD=flagright
     volumes:
       - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
     restart: unless-stopped
 
   client:
@@ -47,6 +48,7 @@ services:
       - backend
     volumes:
       - ./client:/app
+      - /app/node_modules
     working_dir: /app
     command: npm run dev
     restart: unless-stopped
