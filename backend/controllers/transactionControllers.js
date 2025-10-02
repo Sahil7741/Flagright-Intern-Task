@@ -5,6 +5,7 @@ import {
   linkRelatedTransactionsQuery,
   listAllTransactionsQuery
 } from '../cyphers/transactionCyphers.js';
+import { listTransactionsPagedQuery, countTransactionsQuery } from '../cyphers/transactionCyphers.js';
 
 export async function createOrUpdateTransaction(driver, req, res) {
   const session = driver.session();
@@ -28,20 +29,32 @@ export async function createOrUpdateTransaction(driver, req, res) {
 export async function listAllTransactions(driver, req, res) {
   const session = driver.session();
   try {
-    const result = await session.run(listAllTransactionsQuery);
-    const transactions = result.records.map(record => {
-      const t = record.get('t').properties;
-      const sender = record.get('sender')?.properties || null;
-      const receiver = record.get('receiver')?.properties || null;
-      const sRel = record.get('sRel')?.type || null;
-      const rRel = record.get('rRel')?.type || null;
-      return {
-        transaction: t,
-        sender,
-        receiver,
-      };
-    });
-    res.status(200).json(transactions);
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.max(1, Math.min(200, Number(req.query.limit) || 25));
+    const offset = (page - 1) * limit;
+    const sortBy = req.query.sortBy || 'id';
+    const direction = (req.query.direction === 'desc') ? 'desc' : 'asc';
+    const filters = {
+      ip: req.query.ip || null,
+      deviceId: req.query.deviceId || null,
+      senderId: req.query.senderId || null,
+      receiverId: req.query.receiverId || null,
+      minAmount: req.query.minAmount ? Number(req.query.minAmount) : null,
+      maxAmount: req.query.maxAmount ? Number(req.query.maxAmount) : null,
+    };
+
+    const [result, countRes] = await Promise.all([
+      session.run(listTransactionsPagedQuery, { offset, limit, sortBy, direction, filters }),
+      session.run(countTransactionsQuery, { filters })
+    ]);
+
+    const transactions = result.records.map(record => ({
+      transaction: record.get('t').properties,
+      sender: record.get('sender')?.properties || null,
+      receiver: record.get('receiver')?.properties || null,
+    }));
+    const total = countRes.records[0].get('total').toNumber ? countRes.records[0].get('total').toNumber() : countRes.records[0].get('total');
+    res.status(200).json({ data: transactions, page, limit, total });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error listing transactions' });

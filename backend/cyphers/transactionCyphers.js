@@ -10,3 +10,47 @@ export const listAllTransactionsQuery =`MATCH (t:Transaction)
 OPTIONAL MATCH (sender:User)-[sRel:DEBIT]->(t)
 OPTIONAL MATCH (t)-[rRel:CREDIT]->(receiver:User)
 RETURN DISTINCT t, sender, sRel, receiver, rRel`;
+
+export const listTransactionsPagedQuery = `
+WITH $filters AS f
+MATCH (t:Transaction)
+OPTIONAL MATCH (sender:User)-[:DEBIT]->(t)
+OPTIONAL MATCH (t)-[:CREDIT]->(receiver:User)
+WHERE (
+  f.ip IS NULL OR t.ip CONTAINS f.ip
+) AND (
+  f.deviceId IS NULL OR t.deviceId CONTAINS f.deviceId
+) AND (
+  f.senderId IS NULL OR sender.id = f.senderId
+) AND (
+  f.receiverId IS NULL OR receiver.id = f.receiverId
+) AND (
+  f.minAmount IS NULL OR t.amount >= f.minAmount
+) AND (
+  f.maxAmount IS NULL OR t.amount <= f.maxAmount
+)
+WITH t, sender, receiver
+ORDER BY CASE $sortBy WHEN 'amount' THEN t.amount ELSE t.id END
+         CASE WHEN $direction = 'desc' THEN DESC END
+SKIP $offset LIMIT $limit
+RETURN DISTINCT t, sender, receiver`;
+
+export const countTransactionsQuery = `
+WITH $filters AS f
+MATCH (t:Transaction)
+OPTIONAL MATCH (sender:User)-[:DEBIT]->(t)
+OPTIONAL MATCH (t)-[:CREDIT]->(receiver:User)
+WHERE (
+  f.ip IS NULL OR t.ip CONTAINS f.ip
+) AND (
+  f.deviceId IS NULL OR t.deviceId CONTAINS f.deviceId
+) AND (
+  f.senderId IS NULL OR sender.id = f.senderId
+) AND (
+  f.receiverId IS NULL OR receiver.id = f.receiverId
+) AND (
+  f.minAmount IS NULL OR t.amount >= f.minAmount
+) AND (
+  f.maxAmount IS NULL OR t.amount <= f.maxAmount
+)
+RETURN count(DISTINCT t) AS total`;

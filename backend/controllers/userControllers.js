@@ -1,4 +1,5 @@
 import { createUserQuery, createUserSharedAttributeLinksQuery, listAllUsersQuery } from '../cyphers/userCyphers.js';
+import { listUsersPagedQuery, countUsersQuery } from '../cyphers/userCyphers.js';
 
 export async function createOrUpdateUser(driver, req, res) {
   const session = driver.session();
@@ -22,11 +23,20 @@ export async function createOrUpdateUser(driver, req, res) {
 export async function listAllUsers(driver, req, res){
   const session = driver.session();
   try{
-    console.log("Requested to list all users");
-    const result = await session.run(listAllUsersQuery);
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.max(1, Math.min(200, Number(req.query.limit) || 25));
+    const offset = (page - 1) * limit;
+    const sortBy = req.query.sortBy || 'id';
+    const direction = (req.query.direction === 'desc') ? 'desc' : 'asc';
+    const filters = { q: req.query.q || null };
+
+    const [result, countRes] = await Promise.all([
+      session.run(listUsersPagedQuery, { offset, limit, sortBy, direction, filters }),
+      session.run(countUsersQuery, { filters })
+    ]);
     const users = result.records.map(record => record.get('u').properties);
-    console.log("List of all users:", users);
-    res.status(200).json(users);
+    const total = countRes.records[0].get('total').toNumber ? countRes.records[0].get('total').toNumber() : countRes.records[0].get('total');
+    res.status(200).json({ data: users, page, limit, total });
   }
   catch(err){
     console.error(err);
