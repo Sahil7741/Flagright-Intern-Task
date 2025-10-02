@@ -97,10 +97,7 @@ This will:
 - Start Neo4j on `localhost:7474` (Browser) and `bolt://neo4j:7687`
 - Start Backend API on `http://localhost:5000`
 - Start Frontend at `http://localhost:5173`
-- Automatically seed the database with:
-  - 🔹 Users with shared attributes
-  - 🔹 12+ Transactions with direct & indirect links
-  - 🔹 Auto-created relationship edges
+- Optionally generate large-scale synthetic data via the admin endpoint (see below)
 
 ---
 
@@ -114,6 +111,7 @@ This will:
 | `/transaction`                   | GET    | List all transactions with details   |
 | `/user`                          | GET    | List all users                       |
 | `/relationships/transaction/:id` | GET    | Get all relationships of a transaction |
+| `/admin/generate`                | POST   | Generate synthetic users/transactions |
 
 ---
 
@@ -136,6 +134,67 @@ This will:
 - 8 Users with shared emails, phones, or addresses
 - 12+ Transactions with reused IPs / device IDs
 - Bidirectional transaction links via `RELATED_TO`
+
+---
+
+## 🧰 Large-scale Data Generation (100k+ Transactions)
+
+Use the admin endpoint to generate data in batches (idempotent MERGE operations):
+
+```bash
+curl -X POST "http://localhost:5000/admin/generate?users=2000&transactions=100000"
+```
+
+Notes:
+- Defaults: `users=2000`, `transactions=100000` when omitted.
+- Shared attributes are intentionally repeated to create `SHARED_ATTRIBUTE` edges.
+- Transactions reuse IPs/deviceIds to create `RELATED_TO` edges.
+
+---
+
+## 📄 Pagination, Sorting, and Filtering
+
+### GET `/transactions`
+Query parameters:
+- `page` (default: 1), `limit` (default: 25, max: 200)
+- `sortBy`: `id` | `amount` (default: `id`)
+- `direction`: `asc` | `desc` (default: `asc`)
+- Filters: `ip`, `deviceId`, `senderId`, `receiverId`, `minAmount`, `maxAmount`
+
+Example:
+```bash
+curl "http://localhost:5000/transactions?page=1&limit=50&sortBy=amount&direction=desc&ip=192.168.0"
+```
+
+Response shape:
+```json
+{
+  "data": [ { "transaction": {"id":"..."}, "sender": {...}, "receiver": {...} } ],
+  "page": 1,
+  "limit": 50,
+  "total": 100000
+}
+```
+
+### GET `/users`
+Query parameters:
+- `page`, `limit`, `sortBy` (`id` | `name`), `direction`
+- `q` (search across name/email/phone/address/payment_methods)
+
+Example:
+```bash
+curl "http://localhost:5000/users?page=2&limit=25&sortBy=name&q=gmail.com"
+```
+
+Response shape:
+```json
+{
+  "data": [ {"id":"...","name":"..."} ],
+  "page": 2,
+  "limit": 25,
+  "total": 2000
+}
+```
 
 ---
 
