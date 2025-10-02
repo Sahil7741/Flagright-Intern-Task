@@ -1,10 +1,8 @@
-import waitOn from 'wait-on';
-await waitOn({ resources: ['tcp:neo4j:7687'], timeout: 30000 });
 import neo4j from 'neo4j-driver';
 
 
 const driver = neo4j.driver(
-  process.env.NEO4J_URI || 'bolt://localhost:7687',
+  process.env.NEO4J_URI || 'bolt://neo4j:7687',
   neo4j.auth.basic(
     'neo4j',
     'flagright'
