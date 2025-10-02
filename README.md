@@ -47,7 +47,7 @@ This project visualizes user relationships and transaction connections using **N
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/divyaagrawal261/Flagright-Intern-Task.git
+git clone https://github.com/Sahil7741/Flagright-Intern-Task.git
 cd Flagright-Intern-Task
 ```
 
@@ -156,14 +156,6 @@ docker-compose down -v
 
 ---
 
-## Demo Video
+## Notes
 
-Follow this link to view the demo video.
-It covers complete setup using the Readme file and Demo of all the features provided
-[Link](https://youtu.be/DMDzyHnYuvQ)
-
----
-
-## 🧠 Maintainer
-
-Made with 💡 by [Divya Agrawal](https://github.com/divyaagrawal261)
+This repository contains a full-stack prototype for visualizing relationships between users and transactions using a graph database, with Dockerized services for local development and demo.
