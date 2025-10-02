@@ -30,10 +30,8 @@ export async function listAllUsers(driver, req, res){
     const direction = (req.query.direction === 'desc') ? 'desc' : 'asc';
     const filters = { q: req.query.q || null };
 
-    const [result, countRes] = await Promise.all([
-      session.run(listUsersPagedQuery, { offset, limit, sortBy, direction, filters }),
-      session.run(countUsersQuery, { filters })
-    ]);
+    const result = await session.run(listUsersPagedQuery, { offset, limit, sortBy, direction, filters });
+    const countRes = await session.run(countUsersQuery, { filters });
     const users = result.records.map(record => record.get('u').properties);
     const total = countRes.records[0].get('total').toNumber ? countRes.records[0].get('total').toNumber() : countRes.records[0].get('total');
     res.status(200).json({ data: users, page, limit, total });

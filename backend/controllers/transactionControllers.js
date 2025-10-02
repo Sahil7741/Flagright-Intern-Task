@@ -43,10 +43,8 @@ export async function listAllTransactions(driver, req, res) {
       maxAmount: req.query.maxAmount ? Number(req.query.maxAmount) : null,
     };
 
-    const [result, countRes] = await Promise.all([
-      session.run(listTransactionsPagedQuery, { offset, limit, sortBy, direction, filters }),
-      session.run(countTransactionsQuery, { filters })
-    ]);
+    const result = await session.run(listTransactionsPagedQuery, { offset, limit, sortBy, direction, filters });
+    const countRes = await session.run(countTransactionsQuery, { filters });
 
     const transactions = result.records.map(record => ({
       transaction: record.get('t').properties,
