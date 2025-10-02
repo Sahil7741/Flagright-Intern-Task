@@ -1,0 +1,7 @@
+User:
+- id
+- name
+- email
+- phone
+- address
+- payment_methods
