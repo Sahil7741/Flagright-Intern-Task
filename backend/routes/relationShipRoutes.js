@@ -6,6 +6,5 @@ export default function relationshipRoutes(driver) {
 
   router.get('/user/:id', (req, res) => getUserRelationships(driver, req, res));
   router.get('/transaction/:id', (req, res) => getTransactionRelationships(driver, req, res));
-driver
   return router;
 }

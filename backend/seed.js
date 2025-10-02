@@ -68,7 +68,7 @@ const createTransactions = async () => {
     );
     await session.run(
       `MATCH (u:User {id: $receiverId}), (t:Transaction {id: $id})
-       MERGE (u)-[:CREDIT]->(t)`,
+       MERGE (t)-[:CREDIT]->(u)`,
       tx
     );
   }
