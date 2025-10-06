@@ -99,19 +99,27 @@ This will:
 - Start Frontend at `http://localhost:5173`
 - Optionally generate large-scale synthetic data via the admin endpoint (see below)
 
+Once all three containers report "ready", open a new terminal and load the large synthetic dataset:
+
+```bash
+curl -X POST "http://localhost:5000/admin/generate?users=2000&transactions=100000"
+```
+
+This call is idempotent and will upsert **100k transactions** together with their user relationships.
+
 ---
 
 ## 📬 API Endpoints
 
 | Route                             | Method | Description                          |
 |----------------------------------|--------|--------------------------------------|
-| `/user`                          | POST   | Add/update user                      |
+| `/users`                         | POST   | Add or update a user                 |
+| `/users`                         | GET    | List users with pagination & search  |
+| `/transactions`                  | POST   | Create or update a transaction       |
+| `/transactions`                  | GET    | List transactions with pagination & filters |
 | `/relationships/user/:id`        | GET    | Get all relationships of a user      |
-| `/transaction`                   | POST   | Create/Update a transaction          |
-| `/transaction`                   | GET    | List all transactions with details   |
-| `/user`                          | GET    | List all users                       |
 | `/relationships/transaction/:id` | GET    | Get all relationships of a transaction |
-| `/admin/generate`                | POST   | Generate synthetic users/transactions |
+| `/admin/generate`<br>`?users=…&transactions=…` | POST   | Generate synthetic users/transactions |
 
 ---
 
@@ -149,6 +157,27 @@ Notes:
 - Defaults: `users=2000`, `transactions=100000` when omitted.
 - Shared attributes are intentionally repeated to create `SHARED_ATTRIBUTE` edges.
 - Transactions reuse IPs/deviceIds to create `RELATED_TO` edges.
+- `seed.js` only inserts a small demo dataset; use this endpoint in demos to satisfy the "100k transactions" requirement.
+
+---
+
+## ✅ Local Verification
+
+If you prefer to run the services without Docker, start them individually after installing dependencies:
+
+```bash
+# Terminal 1
+cd backend
+npm run dev
+
+# Terminal 2
+cd client
+npm run dev
+```
+
+Both commands use hot reload; the backend listens on `http://localhost:5000`, the frontend on `http://localhost:5173`.
+
+> Automated tests and linters are not bundled yet. Add your own under `backend/` and `client/` and wire them into `npm test` / `npm run lint` as needed.
 
 ---
 
@@ -210,8 +239,8 @@ docker-compose down -v
 
 ## 📎 Tips
 
-- If `neo4j` container fails health check, increase `timeout` or run manually.
-- To re-seed data, delete `.seeded` file in `backend/`.
+- If `neo4j` container fails its health check, rerun `docker-compose up --build` or wait a few extra seconds before starting dependent services.
+- Re-run `curl -X POST "http://localhost:5000/admin/generate"` anytime you need to refresh the large dataset.
 
 ---
 
