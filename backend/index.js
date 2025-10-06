@@ -9,17 +9,22 @@ import adminRoutes from './routes/adminRoutes.js';
 
 dotenv.config();
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-const driver = neo4j.driver(
+export const driver = neo4j.driver(
   process.env.NEO4J_URI || 'bolt://localhost:7687',
   neo4j.auth.basic(
     process.env.NEO4J_USERNAME || 'neo4j',
     process.env.NEO4J_PASSWORD || 'flagright'
   )
 );
+
+export const app = express();
+app.use(cors());
+app.use(express.json());
+
+app.use('/users', userRoutes(driver));
+app.use('/transactions', transactionRoutes(driver));
+app.use('/relationships', relationshipRoutes(driver));
+app.use('/admin', adminRoutes(driver));
 
 async function initializeConstraints() {
   const session = driver.session();
@@ -33,20 +38,53 @@ async function initializeConstraints() {
     await session.run(`CREATE INDEX tx_ip IF NOT EXISTS FOR (t:Transaction) ON (t.ip)`);
     await session.run(`CREATE INDEX tx_device IF NOT EXISTS FOR (t:Transaction) ON (t.deviceId)`);
     console.log('Neo4j constraints and indexes ensured');
-  } catch (e) {
-    console.error('Error ensuring constraints/indexes', e);
   } finally {
     await session.close();
   }
 }
 
-app.use('/users', userRoutes(driver));
-app.use('/transactions', transactionRoutes(driver));
-app.use('/relationships', relationshipRoutes(driver));
-app.use('/admin', adminRoutes(driver));
+let initializationPromise;
 
-initializeConstraints().finally(() => {
-  app.listen(5000, () => console.log('Backend running on port 5000'));
+export function ensureInitialization() {
+  if (!initializationPromise) {
+    initializationPromise = initializeConstraints()
+      .then(() => {
+        console.log('Neo4j constraints and indexes ensured');
+      })
+      .catch((error) => {
+        console.error('Error ensuring constraints/indexes', error);
+        initializationPromise = null;
+        throw error;
+      });
+  }
+  return initializationPromise;
+}
+
+if (!process.env.VERCEL) {
+  ensureInitialization()
+    .catch(() => {
+      // error already logged above, keep server running for local diagnostics
+    })
+    .finally(() => {
+      const port = process.env.PORT || 5000;
+      app.listen(port, () => console.log(`Backend running on port ${port}`));
+    });
+}
+
+export default async function handler(req, res) {
+  await ensureInitialization();
+  return app(req, res);
+}
+
+process.on('SIGINT', async () => {
+  if (!process.env.VERCEL) {
+    await driver.close();
+    process.exit(0);
+  }
 });
 
-// process.on('exit', () => session.close());
+process.on('exit', async () => {
+  if (!process.env.VERCEL) {
+    await driver.close();
+  }
+});
