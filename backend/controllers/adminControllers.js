@@ -108,8 +108,8 @@ function buildSyntheticData({ usersCount, transactionsCount, userDensity = 0.05,
     const amount = Math.round(Math.random() * 100000) / 100;
     const defaultIp = `10.${Math.floor(i / 10000)}.${Math.floor((i / 100) % 100)}.${i % 100}`;
     const ip = assignTransactionAttribute(id, defaultIp, 'ip', ipGroups);
-  const defaultDeviceId = `dev_${Math.floor(i / 10)}`;
-  const deviceId = assignTransactionAttribute(id, defaultDeviceId, 'deviceId', deviceGroups);
+    const defaultDeviceId = `dev_${Math.floor(i / 10)}`;
+    const deviceId = assignTransactionAttribute(id, defaultDeviceId, 'deviceId', deviceGroups);
 
     transactions.push({
       id,
@@ -121,10 +121,10 @@ function buildSyntheticData({ usersCount, transactionsCount, userDensity = 0.05,
     });
   }
 
-  if (sharedEdgeMap.size === 0 && users.length > 1) {
+  if (sharedEdgeMap.size === 0 && users.length > 1 && userDensity > 0) {
     addEdge(sharedEdgeMap, users[0].id, users[1].id, 'seed');
   }
-  if (transactionEdgeMap.size === 0 && transactions.length > 1) {
+  if (transactionEdgeMap.size === 0 && transactions.length > 1 && transactionDensity > 0) {
     addEdge(transactionEdgeMap, transactions[0].id, transactions[1].id, 'seed');
   }
 
@@ -144,11 +144,12 @@ function buildSyntheticData({ usersCount, transactionsCount, userDensity = 0.05,
 export async function generateData(driver, req, res) {
   const session = driver.session();
   try {
-    const usersCount = Math.max(10, Math.min(20000, Number(req.query.users) || 2000));
+    const requestedUsers = Number(req.query.users);
+    const usersCount = Math.max(10, Math.min(20000, Number.isFinite(requestedUsers) && requestedUsers > 0 ? requestedUsers : 20000));
     const transactionsCount = Math.max(100000, Math.min(2000000, Number(req.query.transactions) || 100000));
 
     const densityFallback = parseDensity(req.query.density);
-    const userDensity = parseDensity(req.query.userDensity) ?? densityFallback ?? 0.05;
+    const userDensity = parseDensity(req.query.userDensity) ?? densityFallback ?? 0.001;
     const transactionDensity = parseDensity(req.query.transactionDensity) ?? densityFallback ?? 0.05;
 
     const {

@@ -102,7 +102,7 @@ This will:
 Once all three containers report "ready", open a new terminal and load the large synthetic dataset:
 
 ```bash
-curl -X POST "http://localhost:5000/admin/generate?users=2000&transactions=100000"
+curl -X POST "http://localhost:5000/admin/generate"
 ```
 
 This call is idempotent and will upsert **100k transactions** together with their user relationships.
@@ -150,12 +150,12 @@ This call is idempotent and will upsert **100k transactions** together with thei
 Use the admin endpoint to generate data in batches (idempotent MERGE operations):
 
 ```bash
-curl -X POST "http://localhost:5000/admin/generate?users=2000&transactions=100000"
+curl -X POST "http://localhost:5000/admin/generate"
 ```
 
 Notes:
-- Defaults: `users=2000`, `transactions=100000` when omitted.
-- Shared attributes are intentionally repeated to create `SHARED_ATTRIBUTE` edges.
+- Defaults: `users=20000`, `transactions=100000` when omitted.
+- Shared attributes are kept minimal by default to reduce `SHARED_ATTRIBUTE` edges (set `userDensity` query param for denser graphs).
 - Transactions reuse IPs/deviceIds to create `RELATED_TO` edges.
 - `seed.js` only inserts a small demo dataset; use this endpoint in demos to satisfy the "100k transactions" requirement.
 
