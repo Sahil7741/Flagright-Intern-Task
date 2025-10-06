@@ -4,7 +4,7 @@ export const createUserSharedAttributeLinksQuery = `MATCH (u1:User), (u2:User) W
 
 export const listAllUsersQuery = `MATCH (u:User) RETURN u`;
 
-export const listUsersPagedQuery = `
+export const buildListUsersPagedQuery = (orderClause) => `
 WITH $filters AS f
 MATCH (u:User)
 WHERE (
@@ -14,8 +14,7 @@ WHERE (
   OR toLower(u.address) CONTAINS toLower(f.q)
   OR toLower(u.payment_methods) CONTAINS toLower(f.q)
 )
-ORDER BY CASE $sortBy WHEN 'name' THEN u.name ELSE u.id END
-         CASE WHEN $direction = 'desc' THEN DESC END
+${orderClause}
 SKIP $offset LIMIT $limit
 RETURN u`;
 

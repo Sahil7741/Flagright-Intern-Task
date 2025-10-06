@@ -1,3 +1,4 @@
+import neo4j from 'neo4j-driver';
 import {
   createTransactionQuery,
   linkSenderToTransactionQuery,
@@ -5,7 +6,7 @@ import {
   linkRelatedTransactionsQuery,
   listAllTransactionsQuery
 } from '../cyphers/transactionCyphers.js';
-import { listTransactionsPagedQuery, countTransactionsQuery } from '../cyphers/transactionCyphers.js';
+import { buildListTransactionsPagedQuery, countTransactionsQuery } from '../cyphers/transactionCyphers.js';
 
 export async function createOrUpdateTransaction(driver, req, res) {
   const session = driver.session();
@@ -14,7 +15,7 @@ export async function createOrUpdateTransaction(driver, req, res) {
     await session.run(createTransactionQuery, { id, amount, ip, deviceId });
     await session.run(linkSenderToTransactionQuery, { senderId, id });
     await session.run(linkReceiverToTransactionQuery, { receiverId, id });
-    await session.run(linkRelatedTransactionsQuery);
+  await session.run(linkRelatedTransactionsQuery, { id });
     res.status(200).json({ message: 'Transaction created/linked' });
   } catch (err) {
     console.error(err);
@@ -43,8 +44,29 @@ export async function listAllTransactions(driver, req, res) {
       maxAmount: req.query.maxAmount ? Number(req.query.maxAmount) : null,
     };
 
-    const result = await session.run(listTransactionsPagedQuery, { offset, limit, sortBy, direction, filters });
-    const countRes = await session.run(countTransactionsQuery, { filters });
+    const sortFieldMap = {
+      amount: 't.amount',
+      id: 't.id'
+    };
+    const sortField = sortFieldMap[sortBy] || sortFieldMap.id;
+    const sortDirection = direction === 'desc' ? 'DESC' : 'ASC';
+    const orderClause = `ORDER BY ${sortField} ${sortDirection}`;
+    const listTransactionsQuery = buildListTransactionsPagedQuery(orderClause);
+
+    const filtersParams = {
+      ...filters,
+      minAmount: filters.minAmount != null ? neo4j.int(filters.minAmount) : null,
+      maxAmount: filters.maxAmount != null ? neo4j.int(filters.maxAmount) : null
+    };
+
+    const params = {
+      offset: neo4j.int(offset),
+      limit: neo4j.int(limit),
+      filters: filtersParams
+    };
+
+    const result = await session.run(listTransactionsQuery, params);
+  const countRes = await session.run(countTransactionsQuery, { filters: filtersParams });
 
     const transactions = result.records.map(record => ({
       transaction: record.get('t').properties,

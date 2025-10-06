@@ -1,5 +1,6 @@
+import neo4j from 'neo4j-driver';
 import { createUserQuery, createUserSharedAttributeLinksQuery, listAllUsersQuery } from '../cyphers/userCyphers.js';
-import { listUsersPagedQuery, countUsersQuery } from '../cyphers/userCyphers.js';
+import { buildListUsersPagedQuery, countUsersQuery } from '../cyphers/userCyphers.js';
 
 export async function createOrUpdateUser(driver, req, res) {
   const session = driver.session();
@@ -30,7 +31,22 @@ export async function listAllUsers(driver, req, res){
     const direction = (req.query.direction === 'desc') ? 'desc' : 'asc';
     const filters = { q: req.query.q || null };
 
-    const result = await session.run(listUsersPagedQuery, { offset, limit, sortBy, direction, filters });
+    const sortFieldMap = {
+      name: 'u.name',
+      id: 'u.id'
+    };
+    const sortField = sortFieldMap[sortBy] || sortFieldMap.id;
+    const sortDirection = direction === 'desc' ? 'DESC' : 'ASC';
+    const orderClause = `ORDER BY ${sortField} ${sortDirection}`;
+    const listUsersQuery = buildListUsersPagedQuery(orderClause);
+
+    const params = {
+      offset: neo4j.int(offset),
+      limit: neo4j.int(limit),
+      filters
+    };
+
+    const result = await session.run(listUsersQuery, params);
     const countRes = await session.run(countUsersQuery, { filters });
     const users = result.records.map(record => record.get('u').properties);
     const total = countRes.records[0].get('total').toNumber ? countRes.records[0].get('total').toNumber() : countRes.records[0].get('total');

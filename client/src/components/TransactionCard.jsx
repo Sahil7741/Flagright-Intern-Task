@@ -13,6 +13,7 @@ const TransactionCard = ({ txn, onUpdate }) => {
   const [amount, setAmount] = useState(txn.transaction?.amount || "");
   const [ip, setIp] = useState(txn.transaction?.ip || "");
   const [deviceId, setDeviceId] = useState(txn.transaction?.deviceId || "");
+  const transactionId = txn.transaction?.id;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -60,44 +61,74 @@ const TransactionCard = ({ txn, onUpdate }) => {
   return (
     <>
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
-          <div className="bg-white p-4 rounded shadow-md flex flex-col">
-            <div className="flex justify-between gap-2">
-              <h2 className="text-lg font-bold mb-2">Update Transaction</h2>
-              <Buttons text={"X"} onClick={handleCloseModal} className={"bg-black"} />
+        <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50 px-4">
+          <div className="modal-panel p-6 md:p-7 flex flex-col min-w-[320px] max-w-md w-full">
+            <div className="flex justify-between items-center pb-3 border-b border-cyan-300/20">
+              <h2 className="text-xl font-semibold heading-neon">Update Transaction</h2>
+              <Buttons text={"X"} onClick={handleCloseModal} className={'btn-ghost !px-3 !py-2'} />
             </div>
-            <form className="max-w-md mx-auto flex flex-col" onSubmit={handleSubmit}>
-              <div className="relative z-0 w-full mb-5 group">
-                <input type="number" name="amount" id="amount" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required value={amount} onChange={e => setAmount(e.target.value)} />
-                <label htmlFor="amount" className="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Amount</label>
+            <form className="flex flex-col gap-5 mt-5" onSubmit={handleSubmit}>
+              <div className="relative z-0 w-full group">
+                <input type="number" name="amount" id="amount" className="input-field bg-transparent border border-cyan-300/40 peer" placeholder=" " required value={amount} onChange={e => setAmount(e.target.value)} />
+                <label htmlFor="amount" className="peer-focus:font-medium absolute text-sm text-cyan-200/70 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-200/90 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Amount</label>
               </div>
-              <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center">Submit</button>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-200/80'>
+                <div className='p-3 rounded-xl bg-slate-900/40 border border-cyan-300/20'>
+                  <p className='text-xs uppercase tracking-[0.3em] text-cyan-200/60'>Sender</p>
+                  <p className='mt-1 font-semibold'>{txn.sender?.name}</p>
+                  <p className='text-xs text-slate-300/70'>{txn.sender?.email}</p>
+                </div>
+                <div className='p-3 rounded-xl bg-slate-900/40 border border-orange-400/20'>
+                  <p className='text-xs uppercase tracking-[0.3em] text-orange-200/60'>Receiver</p>
+                  <p className='mt-1 font-semibold'>{txn.receiver?.name}</p>
+                  <p className='text-xs text-slate-300/70'>{txn.receiver?.email}</p>
+                </div>
+              </div>
+              <div className='flex justify-end gap-3'>
+                <Buttons text={'Cancel'} onClick={handleCloseModal} className='btn-ghost' />
+                <button type="submit" className="btn-elevated px-6">Submit</button>
+              </div>
             </form>
           </div>
         </div>
       )}
-      <div key={txn.transaction?.id} className="bg-gray-800 p-4 rounded-lg shadow-md text-white">
-        <h3 className="text-lg font-semibold mb-2">Transaction ID: {txn.transaction?.id}</h3>
-        <p className="text-sm mb-1"><span className="font-semibold">Amount:</span> {txn.transaction?.amount}</p>
-        <p className="text-sm mb-1"><span className="font-semibold">IP:</span> {txn.transaction?.ip}</p>
-        <p className="text-sm mb-1"><span className="font-semibold">Device ID:</span> {txn.transaction?.deviceId}</p>
-        <div className="mt-2 p-2 rounded bg-gray-700">
-          <div className="font-semibold text-blue-300">Sender</div>
-          <p className="text-xs">Name: {txn.sender?.name}</p>
-          <p className="text-xs">Email: {txn.sender?.email}</p>
+      <div key={transactionId} className="surface-panel p-5 rounded-2xl text-slate-100 border border-cyan-400/10 shadow-lg shadow-cyan-900/20 flex flex-col gap-4">
+        <div className='flex items-start justify-between gap-3'>
+          <div>
+            <h3 className="text-xl font-semibold">Txn #{transactionId}</h3>
+            <p className='text-xs uppercase tracking-[0.3em] text-cyan-200/60 mt-1'>Real-time transfer</p>
+          </div>
+          <span className='px-3 py-1 rounded-full bg-cyan-400/20 text-cyan-100 text-sm font-semibold'>${txn.transaction?.amount}</span>
         </div>
-        <div className="mt-2 p-2 rounded bg-gray-700">
-          <div className="font-semibold text-green-300">Receiver</div>
-          <p className="text-xs">Name: {txn.receiver?.name}</p>
-          <p className="text-xs">Email: {txn.receiver?.email}</p>
+        <div className='grid grid-cols-2 gap-3 text-sm text-slate-200/85'>
+          <div>
+            <p className='text-cyan-200/70 text-xs uppercase tracking-[0.25em] mb-1'>IP</p>
+            <p>{txn.transaction?.ip}</p>
+          </div>
+          <div>
+            <p className='text-cyan-200/70 text-xs uppercase tracking-[0.25em] mb-1'>Device</p>
+            <p>{txn.transaction?.deviceId}</p>
+          </div>
         </div>
-        <div className="flex gap-2 mt-2">
-          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded" onClick={handleUpdate}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 rounded-xl bg-slate-900/45 border border-cyan-300/20">
+            <div className="text-xs uppercase tracking-[0.35em] text-cyan-200/60 mb-2">Sender</div>
+            <p className="text-sm font-semibold">{txn.sender?.name}</p>
+            <p className="text-xs text-slate-300/75">{txn.sender?.email}</p>
+          </div>
+          <div className="p-4 rounded-xl bg-slate-900/45 border border-orange-300/20">
+            <div className="text-xs uppercase tracking-[0.35em] text-orange-200/60 mb-2">Receiver</div>
+            <p className="text-sm font-semibold">{txn.receiver?.name}</p>
+            <p className="text-xs text-slate-300/75">{txn.receiver?.email}</p>
+          </div>
+        </div>
+        <div className="flex gap-3 mt-auto pt-2">
+          <button className="btn-elevated px-4 py-2 text-sm" onClick={handleUpdate}>
             Update Amount
           </button>
           <button
-          className='bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded'
-          onClick={() => navigate(`/relationships/transaction/${txn.transaction.id}`)}
+          className='btn-danger px-4 py-2 text-sm'
+          onClick={() => transactionId && navigate(`/relationships/transaction/${transactionId}`)}
         >
           Visualize
         </button>
