@@ -96,7 +96,7 @@ const Users = () => {
             <div className='px-6 md:px-10 flex justify-end'>
                 <Buttons text={'Add User'} onClick={handleAddUser} className='btn-elevated' />
             </div>
-            <div className='glass mx-4 md:mx-8 mt-6 p-6 md:p-7 flex flex-col gap-4 sticky top-24 z-10 border border-cyan-400/10 shadow-lg shadow-cyan-900/20'>
+            <div className='glass mx-4 md:mx-8 mt-6 p-6 md:p-7 flex flex-col gap-4 top-24 z-10 border border-cyan-400/10 shadow-lg shadow-cyan-900/20'>
                 <div className='flex flex-wrap gap-4 items-center justify-between text-slate-100'>
                     <div className='flex flex-wrap gap-3 items-center'>
                         {Object.entries(filterProperties).map(([key, checked]) => (
